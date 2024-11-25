@@ -2,7 +2,8 @@
 
 import os
 import random
-
+from rembg import remove
+from rembg.session_factory import new_session
 import numpy as np 
 from PIL import Image, ImageOps
 from PIL.ImageFilter import GaussianBlur
@@ -31,7 +32,6 @@ def crop_image(img, rect):
     y = y + top
 
     return new_img[y:(y+h),x:(x+w),:]
-
 def face_crop(pts):
     flag = pts[:,2] > 0.2
 
@@ -242,7 +242,22 @@ class EvalWPoseDataset(Dataset):
         rect = self.crop_func(keypoints)
 
         im = crop_image(im, rect)
+        
+        x_keypoints=np.around(((keypoints[:,0]-rect[0])*self.load_size)/rect[3]).astype(int)
+        y_keypoints=np.around(((keypoints[:,1]-rect[1])*self.load_size)/rect[2]).astype(int)
 
+        hand_left_keypoints = np.array(selected_data['hand_left_keypoints_2d']).reshape(-1,3)
+        x_hand_left_keypoints=np.around(((hand_left_keypoints[:,0]-rect[0])*self.load_size)/rect[3]).astype(int)
+        y_hand_left_keypoints=np.around(((hand_left_keypoints[:,1]-rect[1])*self.load_size)/rect[2]).astype(int)
+
+        hand_right_keypoints = np.array(selected_data['hand_right_keypoints_2d']).reshape(-1,3)
+        x_hand_right_keypoints=np.around(((hand_right_keypoints[:,0]-rect[0])*self.load_size)/rect[3]).astype(int)
+        y_hand_right_keypoints=np.around(((hand_right_keypoints[:,1]-rect[1])*self.load_size)/rect[2]).astype(int)
+
+        face_keypoints_2d = np.array(selected_data['face_keypoints_2d']).reshape(-1,3)
+        x_face_keypoints_2d=np.around(((face_keypoints_2d[:,0]-rect[0])*self.load_size)/rect[3]).astype(int)
+        y_face_keypoints_2d=np.around(((face_keypoints_2d[:,1]-rect[1])*self.load_size)/rect[2]).astype(int)
+        
         scale_im2ndc = 1.0 / float(w // 2)
         scale = w / rect[2]
         trans_mat *= scale
@@ -254,8 +269,28 @@ class EvalWPoseDataset(Dataset):
         im_512 = cv2.resize(im, (512, 512))
         im = cv2.resize(im, (self.load_size, self.load_size))
 
+        #im_rm = remove(im)[:,:,:4]
+    
+        im_rm = remove(im, session=new_session("u2net"))
+        #im = remove(img)[:,:,3]
+        #mask = np.where(im < 240, 0, 255) 
+        mask=im_rm[:,:,3].copy()
+        mask[np.where(mask<250)]=0
+        mask[np.where(mask>=250)]=255
+
         image_512 = Image.fromarray(im_512[:,:,::-1]).convert('RGB')
         image = Image.fromarray(im[:,:,::-1]).convert('RGB')
+
+        
+        #mask=im_rm[:,:,3].copy()
+
+        
+        masked_img = cv2.bitwise_and(im, im, mask=mask)
+        
+        image_rm=Image.fromarray(masked_img[:,:,[2,1,0]]).convert('RGB')
+        
+
+        # image_rm = Image.fromarray(im_rm[:,:,::-1]).convert('RGB')
         
         B_MIN = np.array([-1, -1, -1])
         B_MAX = np.array([1, 1, 1])
@@ -268,14 +303,21 @@ class EvalWPoseDataset(Dataset):
         # image
         image_512 = self.to_tensor(image_512)
         image = self.to_tensor(image)
+        image_rm = self.to_tensor(image_rm)
+
         return {
             'name': img_name,
             'img': image.unsqueeze(0),
+            'image_rm':image_rm.unsqueeze(0),
             'img_512': image_512.unsqueeze(0),
             'calib': calib.unsqueeze(0),
             'calib_world': calib_world.unsqueeze(0),
             'b_min': B_MIN,
             'b_max': B_MAX,
+            'keypoints':np.transpose(np.stack((x_keypoints, y_keypoints)), (1, 0)),
+            'hand_left_keypoints':np.transpose(np.stack((x_hand_left_keypoints, y_hand_left_keypoints)), (1, 0)),
+            'hand_right_keypoints':np.transpose(np.stack((x_hand_right_keypoints, y_hand_right_keypoints)), (1, 0)),
+            'face_keypoints_2d':np.transpose(np.stack((x_face_keypoints_2d, y_face_keypoints_2d)), (1, 0)),
         }
 
     def __getitem__(self, index):
