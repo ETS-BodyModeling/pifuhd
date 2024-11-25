@@ -179,12 +179,12 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
 
         for y,x in face_keypoints_2d:
           save_img1[x-3:x+3, y-3:y+3, :] = np.array([0, 255, 255])     
-        save_img_512 = cv2.resize(save_img1, (512, 512))    
-        path = os.path.join("/content/output", os.path.basename(save_path)[:-4])
-        if not os.path.exists(path):
-          os.mkdir(path)       
-        cv2.imwrite(path+'/'+ os.path.basename(save_path)[:-4] +'.png', save_img_512)
-        cv2.imwrite('/content/fares.png', save_img1)
+        # save_img_512 = cv2.resize(save_img1, (512, 512))    
+        # path = os.path.join("/content/output", os.path.basename(save_path)[:-4])
+        # if not os.path.exists(path):
+        #   os.mkdir(path)       
+        # cv2.imwrite(path+'/'+ os.path.basename(save_path)[:-4] +'.png', save_img_512)
+        # cv2.imwrite('/content/fares.png', save_img1)
         
         # print('uv', uv, uv.shape)
         
@@ -233,16 +233,16 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
         yy=np.transpose(yy.numpy(),(1,0)) 
 
         mesh_optim = trimesh.Trimesh(vertices=yy,faces=None)
-        mesh_optim.export('/content/fares.obj')
+        # mesh_optim.export('/content/fares.obj')
 
         mesh_optim = trimesh.Trimesh(vertices=yy[val_temp],faces=None)
-        mesh_optim.export('/content/fares1.obj')
+        # mesh_optim.export('/content/fares1.obj')
         
         mesh_optim = trimesh.Trimesh(vertices=verts[val_temp],faces=None)
-        mesh_optim.export('/content/fares2.obj')
+        # mesh_optim.export('/content/fares2.obj')
 
         mesh_optim = trimesh.Trimesh(vertices=prior_pose,faces=None)
-        mesh_optim.export('/content/fares3.obj')
+        # mesh_optim.export('/content/fares3.obj')
         #   ///////////////////////////////
 
         save_obj_mesh_with_color(save_path, verts, faces, color)
@@ -262,7 +262,7 @@ def recon(opt, use_rect=False):
         opt.resume_epoch = 0
     else:
         state_dict_path = '%s/%s_train_epoch_%d' % (opt.checkpoints_path, opt.name, opt.resume_epoch)
-    
+    # print('state_dict_path', state_dict_path)
     start_id = opt.start_id
     end_id = opt.end_id
 
@@ -270,7 +270,7 @@ def recon(opt, use_rect=False):
 
     state_dict = None
     if state_dict_path is not None and os.path.exists(state_dict_path):
-        print('Resuming from ', state_dict_path)
+        # print('Resuming from ', state_dict_path)
         state_dict = torch.load(state_dict_path, map_location=cuda)    
         print('Warning: opt is overwritten.')
         dataroot = opt.dataroot
@@ -293,7 +293,7 @@ def recon(opt, use_rect=False):
     else:
         test_dataset = EvalWPoseDataset(opt)
 
-    print('test data size: ', len(test_dataset))
+    # print('test data size: ', len(test_dataset))
     projection_mode = test_dataset.projection_mode
 
     opt_netG = state_dict['opt_netG']
@@ -327,11 +327,11 @@ def recon(opt, use_rect=False):
             # for multi-person processing, set it to False
             if True:
                 test_data = test_dataset[i]
-                print(test_data['img'].shape , test_data['img_512'].shape , test_data['calib'].shape , test_data['calib_world'].shape)
+                # print(test_data['img'].shape , test_data['img_512'].shape , test_data['calib'].shape , test_data['calib_world'].shape)
 
                 save_path = '%s/%s/recon/result_%s_%d.obj' % (opt.results_path, opt.name, test_data['name'], opt.resolution)
 
-                print(save_path)
+                # print(save_path)
                 gen_mesh_imgColor(opt.resolution, netMR, cuda, test_data, save_path, components=opt.use_compose)
             else:
                 for j in range(test_dataset.get_n_person(i)):
