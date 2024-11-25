@@ -209,7 +209,7 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
             verts = np.matmul(np.concatenate([verts, np.ones_like(verts[:,:1])],1), inv(calib_world).T)[:,:3]
             # np.save(save_calib_path, calib_world)
         
-        print('calib est = ',calib_tensor,' et calib world = {}',calib_world)
+        # print('calib est = ',calib_tensor,' et calib world = {}',calib_world)
 
         prior_pose=[]
         for ii,ids in enumerate(indices):
