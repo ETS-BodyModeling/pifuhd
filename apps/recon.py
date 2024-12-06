@@ -179,10 +179,10 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
 
         for y,x in face_keypoints_2d:
           save_img1[x-3:x+3, y-3:y+3, :] = np.array([0, 255, 255])     
-        # save_img_512 = cv2.resize(save_img1, (512, 512))    
+        # save_img_512 = cv2.resize(save_img1, (512, 512))
         # path = os.path.join("/content/output", os.path.basename(save_path)[:-4])
         # if not os.path.exists(path):
-        #   os.mkdir(path)       
+        #   os.mkdir(path)
         # cv2.imwrite(path+'/'+ os.path.basename(save_path)[:-4] +'.png', save_img_512)
         # cv2.imwrite('/content/fares.png', save_img1)
         
@@ -194,6 +194,7 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
         # print('image_tensor', image_tensor[:1], image_tensor[:1].shape)
         color = index(image_tensor[:1], uv).detach().cpu().numpy()[0].T
         color = color * 0.5 + 0.5
+        # color_copy = color.copy()
 
         color1 = index(image_tensor_rm[:1], uv).detach().cpu().numpy()[0].T
         color1 = color1 * 0.5 + 0.5
@@ -246,7 +247,7 @@ def gen_mesh_imgColor(res, net, cuda, data, save_path, thresh=0.5, use_octree=Tr
         #   ///////////////////////////////
 
         save_obj_mesh_with_color(save_path, verts, faces, color)
-        save_obj_mesh_with_color(save_path[:-4] + '-rm.obj', verts, faces, color1)
+        # save_obj_mesh_with_color(save_path[:-4] + '-original.obj', verts, faces, color_copy)
 
     except Exception as e:
         print(e)
@@ -307,8 +308,8 @@ def recon(opt, use_rect=False):
     netMR.load_state_dict(state_dict['model_state_dict'])
 
     os.makedirs(opt.checkpoints_path, exist_ok=True)
-    os.makedirs(opt.results_path, exist_ok=True)
-    os.makedirs('%s/%s/recon' % (opt.results_path, opt.name), exist_ok=True)
+    # os.makedirs(opt.results_path, exist_ok=True)
+    # os.makedirs('%s/%s/recon' % (opt.results_path, opt.name), exist_ok=True)
 
     if start_id < 0:
         start_id = 0
@@ -329,7 +330,7 @@ def recon(opt, use_rect=False):
                 test_data = test_dataset[i]
                 # print(test_data['img'].shape , test_data['img_512'].shape , test_data['calib'].shape , test_data['calib_world'].shape)
 
-                save_path = '%s/%s/recon/result_%s_%d.obj' % (opt.results_path, opt.name, test_data['name'], opt.resolution)
+                save_path = '%s/result_%s.obj' % (opt.results_path, test_data['name'])
 
                 # print(save_path)
                 gen_mesh_imgColor(opt.resolution, netMR, cuda, test_data, save_path, components=opt.use_compose)
